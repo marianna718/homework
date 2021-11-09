@@ -5,21 +5,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LSH_RL_BUFSIZE 1024
-#define LSH_TOK_BUFSIZE 64
-#define LSH_TOK_DELIM "\t\r\n\a"
+#define SH_RL_BUFSIZE 1024
+#define SH_TOK_BUFSIZE 64
+#define SH_TOK_DELIM "\t\r\n\a"
 
 
-char *lsh_read_line(void)
+char *sh_read_line(void)
 {
-    int bufsize = LSH_RL_BUFSIZE;
+    int bufsize = SH_RL_BUFSIZE;
     int position = 0;
     char *buffer = malloc(sizeof(char) * bufsize);
     int c;
     
     if (!buffer)
     {
-        fprintf(stderr, "lsh: allocation error\n");
+        fprintf(stderr, "allocation error\n");
         exit(EXIT_FAILURE);
     }
     
@@ -40,11 +40,11 @@ char *lsh_read_line(void)
         
         if(position >= bufsize)
         {
-            bufsize += LSH_RL_BUFSIZE;
+            bufsize += SH_RL_BUFSIZE;
             buffer = realloc(buffer, bufsize);
             if(!buffer)
             {
-                fprintf(stderr, "lsh: allocation error\n");
+                fprintf(stderr, "allocation error\n");
                 exit(EXIT_FAILURE);
                 
             }
@@ -53,19 +53,19 @@ char *lsh_read_line(void)
 }
 
 
-char **lsh_split_line(char *line)
+char **sh_split_line(char *line)
 {
-    int bufsize = LSH_TOK_BUFSIZE, position = 0;
+    int bufsize = SH_TOK_BUFSIZE, position = 0;
     char **tokens = malloc(bufsize * sizeof(char*));
     char *token;
     
     if(!tokens)
     {
-        fprintf(stderr, "lsh: allocaiton error\n");
+        fprintf(stderr, "allocaiton error\n");
         exit(EXIT_FAILURE);
     }
     
-    token = strtok(line, LSH_TOK_DELIM);
+    token = strtok(line, SH_TOK_DELIM);
     
     while(token != NULL)
     {
@@ -75,17 +75,17 @@ char **lsh_split_line(char *line)
     
     if(position >= bufsize)
     {
-        bufsize += LSH_TOK_BUFSIZE;
+        bufsize += SH_TOK_BUFSIZE;
         tokens = realloc(tokens, bufsize * sizeof(char*));
         if(!tokens)
         {
-            fprintf(stderr, "lsh: allocaiton error \n");
+            fprintf(stderr, "allocaiton error \n");
             exit(EXIT_FAILURE);
             
         }
     }
     
-    token = strtok(NULL,LSH_TOK_DELIM);
+    token = strtok(NULL,SH_TOK_DELIM);
     }
     tokens[position] = NULL;
     return tokens;
@@ -94,7 +94,7 @@ char **lsh_split_line(char *line)
 
 
 
-int lsh_launch(char **args)
+int sh_launch(char **args)
 {
     pid_t pid , wpid;
     int status;
@@ -104,14 +104,14 @@ int lsh_launch(char **args)
     {
         if(execvp(args[0], args) == -1)
         {
-            perror("lsh");
+            perror("shl");
         }
         exit(EXIT_FAILURE);
         
     }
     else if(pid < 0)
     {
-        perror("lsh");
+        perror("shl");
     }
     else
     {
@@ -127,9 +127,9 @@ int lsh_launch(char **args)
 
 //built-in-ish functions
 
-int lsh_cd(char **args);
-int lsh_help(char **args);
-int lsh_exit(char **args);
+int sh_cd(char **args);
+int sh_help(char **args);
+int sh_exit(char **args);
 
 char *builtin_str[] = {
     "cd",
@@ -138,12 +138,12 @@ char *builtin_str[] = {
 };
 
 int (*builtin_func[]) (char **) = {
-    &lsh_cd,
-    &lsh_help,
-    &lsh_exit
+    &sh_cd,
+    &sh_help,
+    &sh_exit
 };
 
-int lsh_num_builtins() 
+int sh_num_builtins() 
 {
     return sizeof(builtin_str) / sizeof(char*);
     
@@ -151,31 +151,31 @@ int lsh_num_builtins()
 
 //implementations
 
-int lsh_cd(char **args)
+int sh_cd(char **args)
 {
     if (args[1] == NULL)
     {
-        fprintf(stderr, "lsh: expected argument to \"cd\"\n");
+        fprintf(stderr, "expected argument to \"cd\"\n");
     }
     else 
     {
         if(chdir(args[1]) != 0)
         {
-            perror("lsh");
+            perror("shl");
         }
     }
     return 1;
 }
 
 
-int lsh_help(char **args)
+int sh_help(char **args)
 {
     int i;
     printf("This is some kind of shell\n");
     printf("Type program names and arguments and then hit enter.\n");
     printf("here are built in :\n");
     
-    for(i =0; i < lsh_num_builtins();i++)
+    for(i =0; i < sh_num_builtins();i++)
     {
         printf("  %s\n", builtin_str[i]);
     }
@@ -185,13 +185,13 @@ int lsh_help(char **args)
 }
 
 
-int lsh_exit(char **args)
+int sh_exit(char **args)
 {
     return 0;
 }
 
 
-int lsh_execute(char **args)
+int sh_execute(char **args)
 {
     int i;
     
@@ -200,7 +200,7 @@ int lsh_execute(char **args)
         return 1;
     }
     
-    for(i = 0; i < lsh_num_builtins(); i++)
+    for(i = 0; i < sh_num_builtins(); i++)
     {
         if(strcmp(args[0], builtin_str[i]) == 0)
         {
@@ -208,13 +208,13 @@ int lsh_execute(char **args)
         }
     }
     
-    return lsh_launch(args);
+    return sh_launch(args);
 }
 
 
 
 
-void lsh_loop(void)
+void sh_loop(void)
 {
     char *line;
     char  **args;
@@ -222,9 +222,9 @@ void lsh_loop(void)
     
     do {
         printf("> ");
-        line = lsh_read_line();
-        args = lsh_split_line(line);
-        status = lsh_execute(args);
+        line = sh_read_line();
+        args = sh_split_line(line);
+        status = sh_execute(args);
         
         free(line);
         free(args);
