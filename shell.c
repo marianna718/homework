@@ -233,8 +233,10 @@ void sh_loop(void)
     
 }
 
-int main()
+int main(int argc, char **argv)
 {
+  sh_loop();
 
+  return EXIT_SUCCESS;
 }
 
